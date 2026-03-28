@@ -1,254 +1,145 @@
-# WaybackArchiver
+# Wayback Archiver – Perth Priority Removals
 
-Post URLs to [Wayback Machine](https://archive.org/web/) (Internet Archive), using a crawler, from [Sitemap(s)](http://www.sitemaps.org), or a list of URLs.
+Automated website archiving tool used to create full snapshots of the Perth Priority Removals website in the Internet Archive (Wayback Machine).
 
-> The Wayback Machine is a digital archive of the World Wide Web [...]
-> The service enables users to see archived versions of web pages across time ...  
-> \- [Wikipedia](https://en.wikipedia.org/wiki/Wayback_Machine)
+This repository exists purely for backup and historical record purposes.
 
-[![Build Status](https://travis-ci.org/buren/wayback_archiver.svg?branch=master)](https://travis-ci.org/buren/wayback_archiver) [![Code Climate](https://codeclimate.com/github/buren/wayback_archiver.png)](https://codeclimate.com/github/buren/wayback_archiver) [![Docs badge](https://inch-ci.org/github/buren/wayback_archiver.svg?branch=master)](http://www.rubydoc.info/github/buren/wayback_archiver/master) [![Gem Version](https://badge.fury.io/rb/wayback_archiver.svg)](http://badge.fury.io/rb/wayback_archiver)
+---
 
-__Index__
+## Purpose
 
-* [Installation](#installation)
-* [Usage](#usage)
-  - [Ruby](#ruby)
-  - [CLI](#cli)
-* [Configuration](#configuration)
-* [RubyDoc](#docs)
-* [Contributing](#contributing)
-* [MIT License](#license)
-* [References](#references)
+This tool automatically submits all public pages of the website to the Wayback Machine instead of archiving pages manually one by one.
 
-## Installation
+It is used to:
 
-Install the gem:
-```
-$ gem install wayback_archiver
-```
+* Preserve website versions after major updates
+* Protect against hosting or content loss
+* Maintain historical SEO records
+* Provide proof of published content if required
 
-Or add this line to your application's Gemfile:
+Primary site archived:
 
-```ruby
-gem 'wayback_archiver'
-```
+https://perthpriorityremovals.com.au
 
-And then execute:
+---
 
-```
-$ bundle
-```
+## How It Works
 
-## Usage
+1. The script crawls the website starting from the homepage.
+2. It discovers internal links.
+3. Each page is submitted to the Wayback Machine save endpoint.
+4. Snapshots are stored by archive.org.
 
-* [Ruby](#ruby)
-* [CLI](#cli)
+No website files are stored in this repository.
 
-__Strategies__:
+---
 
-* `auto` (the default) - Will try to
-    1. Find Sitemap(s) defined in `/robots.txt`
-    2. Then in common sitemap locations `/sitemap-index.xml`, `/sitemap.xml` etc.
-    3. Fallback to crawling (using the excellent [spidr](https://github.com/postmodern/spidr/) gem)
-* `sitemap` - Parse Sitemap(s), supports [index files](https://www.sitemaps.org/protocol.html#index) (and gzip)
-* `urls` - Post URL(s)
-
-## Ruby
-
-First require the gem
-
-```ruby
-require 'wayback_archiver'
-```
-
-_Examples_:
-
-Auto
-
-```ruby
-# auto is the default
-WaybackArchiver.archive('example.com')
-
-# or explicitly
-WaybackArchiver.archive('example.com', strategy: :auto)
-```
-
-Crawl
-
-```ruby
-WaybackArchiver.archive('example.com',  strategy: :crawl)
-```
-
-Only send one single URL
-
-```ruby
-WaybackArchiver.archive('example.com', strategy: :url)
-```
-
-Send multiple URLs
-
-```ruby
-WaybackArchiver.archive(%w[example.com www.example.com], strategy: :urls)
-```
-
-Send all URL(s) found in Sitemap
-
-```ruby
-WaybackArchiver.archive('example.com/sitemap.xml', strategy: :sitemap)
-
-# works with Sitemap index files too
-WaybackArchiver.archive('example.com/sitemap-index.xml.gz', strategy: :sitemap)
-```
-
-Specify concurrency
-
-```ruby
-WaybackArchiver.archive('example.com', strategy: :auto, concurrency: 10)
-```
-
-Specify max number of URLs to be archived
-
-```ruby
-WaybackArchiver.archive('example.com', strategy: :auto, limit: 10)
-```
-
-Each archive strategy can receive a block that will be called for each URL
-
-```ruby
-WaybackArchiver.archive('example.com', strategy: :auto) do |result|
-  if result.success?
-    puts "Successfully archived: #{result.archived_url}"
-  else
-    puts "Error (HTTP #{result.code}) when archiving: #{result.archived_url}"
-  end
-end
-```
-
-Use your own adapter for posting found URLs
-
-```ruby
-WaybackArchiver.adapter = ->(url) { puts url } # whatever that responds to #call
-```
-
-## CLI
-
-__Usage__:
+## Repository Structure
 
 ```
-wayback_archiver [<url>] [options]
+.
+├── main.py              # Archiver script
+├── config.yml           # Website configuration
+├── requirements.txt     # Dependencies
+└── .github/workflows/
+    └── archive.yml      # Automated monthly run
 ```
 
-Print full usage instructions
+---
+
+## Setup (Local Testing)
+
+Clone the repository:
 
 ```
-wayback_archiver --help
+git clone https://github.com/perthpriorityremovals/wayback-archiver.git
+cd wayback-archiver
 ```
 
-_Examples_:
-
-Auto
+Install dependencies:
 
 ```
-# auto is the default
-wayback_archiver example.com
-
-# or explicitly
-wayback_archiver example.com --auto
+pip install -r requirements.txt
 ```
 
-Crawl
+Run manually:
 
-```bash
-wayback_archiver example.com --crawl
+```
+python main.py
 ```
 
-Only send one single URL
-
-```bash
-wayback_archiver example.com --url
-```
-
-Send multiple URLs
-
-```bash
-wayback_archiver example.com www.example.com --urls
-```
-
-Crawl multiple URLs
-
-```bash
-wayback_archiver example.com www.example.com --crawl
-```
-
-Send all URL(s) found in Sitemap
-
-```bash
-wayback_archiver example.com/sitemap.xml
-
-# works with Sitemap index files too
-wayback_archiver example.com/sitemap-index.xml.gz
-```
-
-Most options
-
-```bash
-wayback_archiver example.com www.example.com --auto --concurrency=10 --limit=100 --log=output.log --verbose
-```
-
-View archive: [https://web.archive.org/web/*/http://example.com](https://web.archive.org/web/*/http://example.com) (replace `http://example.com` with to your desired domain).
+---
 
 ## Configuration
 
-:information_source: By default `wayback_archiver` doesn't respect robots.txt files, see [this Internet Archive blog post](https://blog.archive.org/2017/04/17/robots-txt-meant-for-search-engines-dont-work-well-for-web-archives/) for more information.
+Edit `config.yml`:
 
-Configuration (the below values are the defaults)
-
-```ruby
-WaybackArchiver.concurrency = 1
-WaybackArchiver.user_agent = WaybackArchiver::USER_AGENT
-WaybackArchiver.respect_robots_txt = WaybackArchiver::DEFAULT_RESPECT_ROBOTS_TXT
-WaybackArchiver.logger = Logger.new(STDOUT)
-WaybackArchiver.max_limit = -1 # unlimited
-WaybackArchiver.adapter = WaybackArchiver::WaybackMachine # must implement #call(url)
+```
+base_url: https://perthpriorityremovals.com.au
+crawl_depth: 3
+delay_seconds: 5
+include_subdomains: false
 ```
 
-For a more verbose log you can configure `WaybackArchiver` as such:
+### Notes
 
-```ruby
-WaybackArchiver.logger = Logger.new(STDOUT).tap do |logger|
-  logger.progname = 'WaybackArchiver'
-  logger.level = Logger::DEBUG
-end
-```
+* Delay prevents archive.org rate limiting.
+* Crawl depth controls how many internal links are followed.
 
-_Pro tip_: If you're using the gem in a Rails app you can set `WaybackArchiver.logger = Rails.logger`.
+---
 
-## Docs
+## Automation
 
-You can find the docs online on [RubyDoc](http://www.rubydoc.info/github/buren/wayback_archiver/master).
+Archiving runs automatically using GitHub Actions.
 
-This gem is documented using `yard` (run from the root of this repository).
+Schedule:
 
-```bash
-yard # Generates documentation to doc/
-```
+* Monthly automatic archive
+* Manual run available via GitHub Actions tab
 
-## Contributing
+To run manually:
 
-Contributions, feedback and suggestions are very welcome.
+1. Open **Actions** tab in GitHub
+2. Select **Archive Website**
+3. Click **Run workflow**
 
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+---
 
-## License
+## When to Run an Archive
 
-[MIT License](LICENSE)
+Run after:
 
-## References
+* Publishing new service pages
+* SEO structure changes
+* Website redesigns
+* Major content updates
 
-* Don't know what the Wayback Machine (Internet Archive) is? [Wayback Machine](https://archive.org/web/)
-* Don't know what a Sitemap is? [sitemaps.org](http://www.sitemaps.org)
-* Don't know what robot.txt is? [www.robotstxt.org](http://www.robotstxt.org/robotstxt.html)
+Avoid running repeatedly in short timeframes.
+
+---
+
+## Limitations
+
+* External links are not archived.
+* Archive.org may throttle requests if run too frequently.
+* Some dynamic pages may not snapshot perfectly.
+
+---
+
+## Maintenance
+
+Minimal maintenance required.
+
+Recommended checks:
+
+* Confirm monthly workflow succeeds
+* Spot-check snapshots on Wayback Machine
+
+https://web.archive.org
+
+---
+
+## Owner
+
+Perth Priority Removals
+Urgent moves. Done right.
