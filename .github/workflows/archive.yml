@@ -21,15 +21,14 @@ jobs:
 
       - name: Install dependencies
         run: bundle install
-              - name: Test homepage fetch
-              
+
+      - name: Test homepage fetch
         run: |
           echo "Normal HEAD request"
           curl -I https://perthpriorityremovals.com.au
           echo ""
           echo "Internet Archive user-agent HEAD request"
           curl -A "ia_archiver" -I https://perthpriorityremovals.com.au
-      - name: Test homepage fetch
-        run: curl -I https://perthpriorityremovals.com.au
+
       - name: Run Wayback archiver
         run: bundle exec ruby script/archive_ppr.rb
