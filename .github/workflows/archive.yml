@@ -13,22 +13,20 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: "3.2"
-          bundler-cache: true
-
-      - name: Install dependencies
-        run: bundle install
-
       - name: Test homepage fetch
         run: |
           echo "Normal HEAD request"
           curl -I https://perthpriorityremovals.com.au
           echo ""
-          echo "Internet Archive user-agent HEAD request"
-          curl -A "ia_archiver" -I https://perthpriorityremovals.com.au
+          echo "Archive save endpoint test"
+          curl -I https://web.archive.org
 
-      - name: Run Wayback archiver
-        run: bundle exec ruby script/archive_ppr.rb
+      - name: Run URL list archiver
+        run: bash script/archive_urls.sh
+
+      - name: Upload archive log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: archive-log
+          path: archive-log.txt
